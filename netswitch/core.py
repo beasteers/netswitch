@@ -10,8 +10,7 @@ from . import iw, wpasup
 import logging
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)  # INFO
 
 
 class NetSwitch:
@@ -53,16 +52,16 @@ class NetSwitch:
     def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
         interfaces = list(ifcfg.interfaces())
-        logger.debug('Interfaces: {}'.format(interfaces))
+        logger.info('Interfaces: {}'.format(interfaces))
         for cfg in self.config:
-            logger.debug('Checking config: {}'.format(cfg))
             # check if any matching interfaces are available
             ifaces = [
                 i for i in interfaces
                 if fnmatch.fnmatch(i, cfg['interface'])]
+
+            logger.info('Iface {} - matches {}'.format(cfg['interface'], ifaces))
             # try to connect in order of wlan1, wlan0
             for iface in sorted(ifaces, reverse=True):
-                logger.debug('Checking: {}'.format(iface))
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
         # check if internet is connected anyways
@@ -99,8 +98,8 @@ class NetSwitch:
         available = ssid is not None
         connected = available and (test or wpasup.Wpa(ssid).connect())
         logger.info(
-            'Requested AP ({}) Available? {}. Connected? {}.'.format(
-                ssid, available, connected))
+            'Requested AP ({}) Available? {}. Connected? {}. [{}]'.format(
+                ssid, available, connected, iface))
         return connected
 
     def __getitem__(self, index):
