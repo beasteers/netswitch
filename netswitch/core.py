@@ -140,10 +140,10 @@ def internet_connected(iface=None, n=3):
             "ping {} -c {} 8.8.8.8".format(
                 '-I {}'.format(iface) if iface else '', n),
             capture_output=True, check=True, shell=True)
+        return not result.stderr
     except subprocess.CalledProcessError as e:
         logger.exception(e)
         logger.error(e.stderr)
-    return not result.stderr
 
 
 
