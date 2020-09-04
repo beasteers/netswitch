@@ -53,7 +53,7 @@ class NetSwitch:
 
     def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
-        interfaces = list(ifcfg.interfaces())
+        interfaces = ifcfg.interfaces()
         logger.info('Interfaces: {}'.format(interfaces))
         for cfg in self.config:
             # check if any matching interfaces are available
@@ -64,6 +64,8 @@ class NetSwitch:
             logger.info('Iface {} - matches {}'.format(cfg['interface'], ifaces))
             # try to connect in order of wlan1, wlan0
             for iface in sorted(ifaces, reverse=True):
+                if not interfaces[iface].get('inet'):
+                    util.ifup(iface)
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
         # check if internet is connected anyways
@@ -122,6 +124,8 @@ class NetSwitch:
                 util.mask_dict_values(
                     wpasup.Wpa().parsed, 'password', drop=('psk',)),
                 indent=4, sort_keys=True),
+            # '', 'Available Networks:',
+            # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
             json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '-'*50,
