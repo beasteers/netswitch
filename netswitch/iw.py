@@ -39,9 +39,10 @@ class WLan:
         while len(top_seen) < nscans:
             sids = [ap.ssid for ap in self.scan()]
             trusted = [s for s in sids if s in ssids] if ssids else sids
-            logger.info('Scan {} - aps: {}, total={}'.format(len(top_seen), sids, len(sids)))
-            all_seen.update(sids)
-            top_seen.extend(sids[:1])
+            logger.info('Scan {} - trusted: {}, all={}'.format(
+                len(top_seen), trusted, len(sids)))
+            all_seen.update(trusted)
+            top_seen.extend(trusted[:1])
             # throttle and timeout
             time.sleep(throttle)
             if timeout and time.time() - t0 >= timeout:

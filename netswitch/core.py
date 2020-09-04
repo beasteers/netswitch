@@ -107,8 +107,8 @@ class NetSwitch:
 
         connected = test or wpasup.Wpa(ssid).connect()
         logger.info(
-            'AP ({}) Connected? {}. [{}, ssids={}]'.format(
-                ssid, connected, iface, ssids or 'any'))
+            'AP ({}) Connected? {}. [{}]'.format(
+                ssid, connected, iface))
         return connected
 
     def __getitem__(self, index):
@@ -128,7 +128,7 @@ class NetSwitch:
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
             '\n'.join('\t{:<16}: {:>16} {:>15}'.format(
-                str(d.get('device')), str(d.get('inet')), str(d.get('ether')), 
+                str(d.get('device')), str(d.get('inet')), str(d.get('ether')),
             ) for d in ifcfg.interfaces().values()),
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '-'*50,
