@@ -127,7 +127,7 @@ class NetSwitch:
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
-            '\n'.join('\t{device}: {inet} {ether}'.format(**d) for d in ifcfg.interfaces().values()),
+            '\n'.join('\t{device:<16}: {inet:>16} {ether:>15}'.format(**d) for d in ifcfg.interfaces().values()),
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '-'*50,
         )))

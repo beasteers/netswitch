@@ -32,11 +32,11 @@ class WLan:
         ap = count >= nmin and ap
         return (ap, all_seen) if return_all else ap
 
-    def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=15):
+    def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=30):
         all_seen, top_seen = set(), []
         t0 = time.time()
         logger.info('Selecting best network from: {}'.format(ssids or 'all'))
-        while len(all_seen) < nscans:
+        while len(top_seen) < nscans:
             sids = [ap.ssid for ap in self.scan()]
             trusted = [s for s in sids if s in ssids] if ssids else sids
             logger.info('Scan {} - aps: {}, total={}'.format(len(top_seen), sids, len(sids)))
