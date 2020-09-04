@@ -40,30 +40,30 @@ def indent(txt, n=1, w=2):
 
 
 
-def ifup(iface, sleep=1):
+def ifup(name, sleep=1):
     try:
         subprocess.run(
-            'ifup {} && sleep {}'.format(ifname, sleep),
+            'ifup {} && sleep {}'.format(name, sleep),
             check=True, stderr=sys.stderr, shell=True)
     except subprocess.CalledProcessError as e:
         logger.exception(e)
         return False
     return True
 
-def ifdown(iface, sleep=1, force=True):
+def ifdown(name, sleep=1, force=True):
     try:
         subprocess.run(
             'ifdown {} {} && sleep {}'.format(
-                ifname, force * '--force', sleep),
+                name, force * '--force', sleep),
             check=True, stderr=sys.stderr, shell=True)
     except subprocess.CalledProcessError as e:
         logger.exception(e)
         return False
     return True
 
-def restart_iface(ifname=None, sleep=3):
+def restart_iface(name=None, sleep=3):
     '''Restart the specified network interface. Returns True if restarted without error.'''
-    logger.info("Restarting Interface: {}".format(ifname))
-    went_down = ifdown(iface, sleep)
-    back_up = ifup(iface, sleep)
+    logger.info("Restarting Interface: {}".format(name))
+    went_down = ifdown(name, sleep)
+    back_up = ifup(name, sleep)
     return went_down and back_up
