@@ -96,14 +96,15 @@ class NetSwitch:
             for s in glob.glob(wpasup.ssid_path(pat))]
 
         # check for available ssids and take best one
-        logger.debug('Trusted ssids: {}'.format(ssids))
         ssid = wlan.select_best_ssid(ssids)
-        logger.debug('Selected ssid: {}'.format(ssid or None))
-        available = ssid is not None
-        connected = available and (test or wpasup.Wpa(ssid).connect())
+        if ssid is None:
+            logger.info('No matches: {}'.format(ssids or 'any'))
+            return
+
+        connected = test or wpasup.Wpa(ssid).connect()
         logger.info(
-            'Requested AP ({}) Available? {}. Connected? {}. [{}]'.format(
-                ssid or ssids or 'any', available, connected, iface))
+            'AP ({}) Connected? {}. [{}, ssids={}]'.format(
+                ssid, connected, iface, ssids or 'any'))
         return connected
 
     def __getitem__(self, index):
