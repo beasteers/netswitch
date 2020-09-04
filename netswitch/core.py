@@ -92,7 +92,7 @@ class NetSwitch:
         if not isinstance(ssids, (list, tuple)):  # coerce to list of globs
             ssids = [ssids]
         ssids = [
-            os.path.splitext(os.path.dirname(s))[0] for pat in ssids
+            os.path.splitext(os.path.basename(s))[0] for pat in ssids
             for s in glob.glob(wpasup.ssid_path(pat))]
 
         # check for available ssids and take best one
