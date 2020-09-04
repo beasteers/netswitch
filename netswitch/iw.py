@@ -18,11 +18,16 @@ class WLan:
         return any(1 for ap_i in self.scan() if ap in ap_i.ssid)
 
     def select_best_ssid(self, ssids=None, nmin=3, **kw):
+        if ssids is not None:  # handle special cases
+            if not ssids:
+                return None
+            if len(ssids) == 1:
+                return self.ap_available(ssids[0]) and ssids[0]
+        # select best
         top_seen, all_seen = self._get_top_ssids(ssids, **kw)
         most_common = Counter(top_seen).most_common(1)
         ap, count = most_common[0] if most_common else (None, -1)
         return count >= nmin and ap, all_seen
-
 
     def _get_top_ssids(self, ssids=None, nscans=5, throttle=0.6, timeout=10):
         all_seen, top_seen = set(), []

@@ -10,6 +10,7 @@ from . import iw, wpasup
 import logging
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
 
 
 class NetSwitch:
@@ -48,17 +49,19 @@ class NetSwitch:
             for c in (cfg if isinstance(cfg, (list, tuple)) else [cfg])
         ]
 
-    def check(self):
+    def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
         interfaces = list(ifcfg.interfaces())
-        # print('Interfaces: {}'.format(interfaces))
+        logger.debug('Interfaces: {}'.format(interfaces))
         for cfg in self.config:
+            logger.debug('Checking config: {}'.format(cfg))
             # check if any matching interfaces are available
             ifaces = [
                 i for i in interfaces
                 if fnmatch.fnmatch(i, cfg['interface'])]
             # try to connect in order of wlan1, wlan0
             for iface in sorted(ifaces, reverse=True):
+                logger.debug('Checking: {}'.format(iface))
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
         # check if internet is connected anyways
@@ -70,13 +73,13 @@ class NetSwitch:
             time.sleep(interval)
             self.check()
 
-    def connect(self, iface, cfg):
+    def connect(self, iface, cfg, **kw):
         '''Connect to an interface.'''
         if fnmatch.fnmatch(iface, 'wlan*'):
-            return self.connect_wlan(iface, cfg)
+            return self.connect_wlan(iface, cfg, **kw)
         return True
 
-    def connect_wlan(self, iface, cfg):
+    def connect_wlan(self, iface, cfg, test=False):
         # get the wlan connection object
         if iface not in self.wlans:  # cache it for future use
             self.wlans[iface] = iw.WLan(iface=iface)
@@ -87,20 +90,16 @@ class NetSwitch:
         if not isinstance(ssids, (list, tuple)):  # coerce to list of globs
             ssids = [ssids]
         ssids = [
-            s for pat in ssids for s in glob.glob(wpasup.Wpa.ssid_path(pat))]
-
-        if not ssids:  # nothing to connect to
-            return False
-
-        if len(ssids) == 1:  # only one, don't need to compare
-            return wlan.ap_available(ssids[0]) and wpasup.Wpa(ssids[0]).connect()
+            s for pat in ssids for s in glob.glob(wpasup.ssid_path(pat))]
 
         # check for available ssids and take best one
         ssid = wlan.select_best_ssid(ssids)
+        logger.debug('Selected ssid: {}'.format(ssid))
         available = ssid is not None
-        connected = available and wpasup.Wpa(ssid).connect()
+        connected = available and (test or wpasup.Wpa(ssid).connect())
         logger.info(
-            f'Requested AP ({ssid}) Available? {available}. Connected? {connected}.')
+            'Requested AP ({}) Available? {}. Connected? {}.'.format(
+                ssid, available, connected))
         return connected
 
     def __getitem__(self, index):
