@@ -6,7 +6,7 @@ import time
 import fnmatch
 import subprocess
 import ifcfg
-from . import iw, wpasup
+from . import iw, wpasup, util
 # import cachetools.func
 
 import logging
@@ -70,10 +70,12 @@ class NetSwitch:
         return internet_connected()
 
     def run(self, interval=10):
+        self.summary()
         self.check()
         while True:
             time.sleep(interval)
             self.check()
+        self.summary()
 
     def connect(self, iface, cfg, **kw):
         '''Connect to an interface.'''
@@ -97,7 +99,7 @@ class NetSwitch:
 
         # check for available ssids and take best one
         ssid = wlan.select_best_ssid(ssids)
-        if ssid is None:
+        if not ssid:
             logger.info('No matches: {}'.format(ssids or 'any'))
             return
 
@@ -109,6 +111,22 @@ class NetSwitch:
 
     def __getitem__(self, index):
         return self.__class__(self.config[index])
+
+    def summary(self):
+        import json
+        print()
+        print('\n'.join((
+            '-'*50,
+            'Current Network:',
+            json.dumps(
+                util.mask_dict_values(
+                    wpasup.Wpa().parsed, 'password', drop=('psk',)),
+                indent=4, sort_keys=True),
+            '', 'Interfaces:',
+            json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
+            '-'*50,
+        )))
+        print()
 
 
 def internet_connected(iface=None, n=3):

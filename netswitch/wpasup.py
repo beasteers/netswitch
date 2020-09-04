@@ -157,7 +157,7 @@ network={{
     with open(ensure_dir(ssid_path(ssid, ap_path=ap_path)), 'w') as f:
         f.write(tmpl.format(
             group=group, country=country,
-            network=_indent(_wpa_keys(**network, **kw), 2)))
+            network=util.indent(_wpa_keys(**network, **kw), 2)))
     return True
 
 
@@ -173,7 +173,3 @@ def _wpa_keys(*a, sep='\n', **kw):
         '{}={}'.format(k, '{!r}'.format(v))
         for k, v in kw.items()
     ])
-
-
-def _indent(txt, n=1, w=2):
-    return ''.join(' '*w*n + l for l in txt.splitlines(keepends=True))

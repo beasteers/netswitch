@@ -27,6 +27,18 @@ def flatten(*items):
 
 
 
+def mask_dict_values(dct, *keys, ch='*', drop=None):
+    return {
+        k: '*'*len(v) if v in keys else v
+        for k, v in dct.items()
+        if not drop or k not in drop
+    }
+
+
+def indent(txt, n=1, w=2):
+    return ''.join(' '*w*n + l for l in txt.splitlines(keepends=True))
+
+
 
 def restart_iface(ifname=None, sleep=3):
     '''Restart the specified network interface. Returns True if restarted without error.'''
