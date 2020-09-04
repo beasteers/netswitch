@@ -1,3 +1,4 @@
+import sys
 import glob
 import time
 import shlex
@@ -109,9 +110,9 @@ class NetSwitch:
 def internet_connected(iface=None, n=3):
     '''Check if we're connected to the internet (optionally, check a specific interface `iface`)'''
     result = subprocess.run(
-        shlex.split("ping {} -c {} 8.8.8.8".format(
-            '-I {}'.format(iface) if iface else '', n)),
-        capture_output=True, check=True)
+        "ping {} -c {} 8.8.8.8".format(
+            '-I {}'.format(iface) if iface else '', n),
+        capture_output=True, check=True, stdout=sys.stderr, shell=True)
     return not result.stderr
 
 

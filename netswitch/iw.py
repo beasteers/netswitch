@@ -1,6 +1,10 @@
 import time
 from collections import Counter
 from access_points import get_scanner
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class WLan:
@@ -18,11 +22,9 @@ class WLan:
         return any(1 for ap_i in self.scan() if ap in ap_i.ssid)
 
     def select_best_ssid(self, ssids=None, nmin=3, **kw):
-        if ssids is not None:  # handle special cases
-            if not ssids:
-                return None
-            if len(ssids) == 1:
-                return self.ap_available(ssids[0]) and ssids[0]
+        # handle special cases
+        if len(ssids) == 1:
+            return self.ap_available(ssids[0]) and ssids[0]
         # select best
         top_seen, all_seen = self._get_top_ssids(ssids, **kw)
         most_common = Counter(top_seen).most_common(1)
@@ -32,8 +34,10 @@ class WLan:
     def _get_top_ssids(self, ssids=None, nscans=5, throttle=0.6, timeout=10):
         all_seen, top_seen = set(), []
         t0 = time.time()
+        logger.info('Selecting best network from: {}'.format(ssids or 'all'))
         while len(all_seen) < nscans:
             sids = [ap.ssid for ap in self.scan(ssids)]
+            logger.info('Scan {} - aps:'.format(len(all_seen), sids))
             all_seen.update(sids)
             top_seen.extend(sids[:1])
             # throttle and timeout
