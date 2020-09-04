@@ -28,13 +28,15 @@ def flatten(*items):
 
 
 
-def restart_iface(ifname=None, sleep=5):
+def restart_iface(ifname=None, sleep=3):
     '''Restart the specified network interface. Returns True if restarted without error.'''
-    logger.info("Restarting {}".format(ifname))
-    subprocess.run(
-        ['ifdown', ifname, '--force', '&&', 'sleep', str(sleep)],
-        check=True, stderr=sys.stderr)
-    subprocess.run(
-        ['ifup', ifname, '&&', 'sleep', str(sleep)],
-        check=True, stderr=sys.stderr)
+    logger.info("Restarting Interface: {}".format(ifname))
+    try:
+        subprocess.run(
+            'ifdown {} --force && sleep {}'.format(ifname, sleep),
+            check=True, stderr=sys.stderr, shell=True)
+    finally:
+        subprocess.run(
+            'ifup {} && sleep {}'.format(ifname, sleep),
+            check=True, stderr=sys.stderr, shell=True)
     return True
