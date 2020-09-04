@@ -24,6 +24,7 @@ class WLan:
     def select_best_ssid(self, ssids=None, nmin=3, return_all=False, **kw):
         # handle special cases
         if len(ssids) == 1:
+            logger.info('Checking for network: {}'.format(ssids[0]))
             return self.ap_available(ssids[0]) and ssids[0]
         # select best
         top_seen, all_seen = self._get_top_ssids(ssids, **kw)
