@@ -102,7 +102,7 @@ class NetSwitch:
         # check for available ssids and take best one
         ssid = wlan.select_best_ssid(ssids)
         if not ssid:
-            logger.info('No matches.')
+            logger.info('No wifi matches.')
             return
 
         connected = test or wpasup.Wpa(ssid).connect()
@@ -127,7 +127,8 @@ class NetSwitch:
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
-            json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
+            '\n'.join('\t{device}: {inet} {ether}'.format(**d) for d in ifcfg.interfaces()),
+            # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '-'*50,
         )))
         print()
