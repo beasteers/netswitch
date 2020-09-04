@@ -77,7 +77,7 @@ class NetSwitch:
         while True:
             time.sleep(interval)
             check = self.check()
-            logger.info('Finished check. Connected to internet? {}'.format(check))
+            # logger.debug('Finished check. Connected to internet? {}'.format(check))
         self.summary()
 
     def connect(self, iface, cfg, **kw):

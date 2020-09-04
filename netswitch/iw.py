@@ -30,8 +30,10 @@ class WLan:
         top_seen, all_seen = self._get_top_ssids(ssids, **kw)
         most_common = Counter(top_seen).most_common(1)
         ap, count = most_common[0] if most_common else (None, -1)
-        ap = count >= nmin and ap
-        return (ap, all_seen) if return_all else ap
+        out_ap = count >= nmin and ap
+        if ap and not out_ap:
+            logger.debug('AP ({}) was available but not strong enough ({}/{}).'.format(ap, count, nmin))
+        return (out_ap, all_seen) if return_all else out_ap
 
     def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=30):
         all_seen, top_seen = set(), []
