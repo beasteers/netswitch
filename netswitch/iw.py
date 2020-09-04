@@ -15,6 +15,7 @@ class WLan:
     def scan(self, trusted=None):
         aps = self.wifi_scanner.get_access_points()
         aps = sorted(aps, key=lambda ap: ap.quality, reverse=True)
+        print([a.ssid for a in aps])
         return [ap for ap in aps if ap.ssid in trusted] if trusted else aps
 
     def ap_available(self, ap):

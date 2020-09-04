@@ -54,7 +54,7 @@ class NetSwitch:
     def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
         interfaces = ifcfg.interfaces()
-        logger.info('Interfaces: {}'.format(interfaces))
+        logger.info('Interfaces: {}'.format(list(interfaces)))
         for cfg in self.config:
             # check if any matching interfaces are available
             ifaces = [
@@ -142,8 +142,7 @@ def internet_connected(iface=None, n=3):
             capture_output=True, check=True, shell=True)
         return not result.stderr
     except subprocess.CalledProcessError as e:
-        logger.exception(e)
-        logger.error(e.stderr)
+        logger.warning(e.stderr.decode('utf-8'))
 
 
 
