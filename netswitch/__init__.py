@@ -26,4 +26,4 @@ def get_ip(*ifaces, key='inet'):
 
 def get_ap_info(key, *ifaces):
     info = {iface: d.get(key) for iface, d in get_ifaces(*ifaces).items()}
-    return {k: v for k, v in info.items() if v is not Nonew}
+    return {k: v for k, v in info.items() if v is not None}
