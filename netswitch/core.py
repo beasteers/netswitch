@@ -102,7 +102,7 @@ class NetSwitch:
         # check for available ssids and take best one
         ssid = wlan.select_best_ssid(ssids)
         if not ssid:
-            logger.info('No matches: {}'.format(ssids or 'any'))
+            logger.info('No matches.')
             return
 
         connected = test or wpasup.Wpa(ssid).connect()

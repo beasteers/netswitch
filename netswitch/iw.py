@@ -15,7 +15,6 @@ class WLan:
     def scan(self, trusted=None):
         aps = self.wifi_scanner.get_access_points()
         aps = sorted(aps, key=lambda ap: ap.quality, reverse=True)
-        print([a.ssid for a in aps])
         return [ap for ap in aps if ap.ssid in trusted] if trusted else aps
 
     def ap_available(self, ap):
@@ -33,13 +32,14 @@ class WLan:
         ap = count >= nmin and ap
         return (ap, all_seen) if return_all else ap
 
-    def _get_top_ssids(self, ssids=None, nscans=5, throttle=0.6, timeout=10):
+    def _get_top_ssids(self, ssids=None, nscans=5, throttle=1.2, timeout=10):
         all_seen, top_seen = set(), []
         t0 = time.time()
         logger.info('Selecting best network from: {}'.format(ssids or 'all'))
         while len(all_seen) < nscans:
-            sids = [ap.ssid for ap in self.scan(ssids)]
-            logger.info('Scan {} - aps: {}'.format(len(top_seen), sids))
+            sids = [ap.ssid for ap in self.scan()]
+            trusted = [s for s in sids if s in ssids] if ssids else sids
+            logger.info('Scan {} - aps: {}, total={}'.format(len(top_seen), sids, len(sids)))
             all_seen.update(sids)
             top_seen.extend(sids[:1])
             # throttle and timeout
