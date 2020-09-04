@@ -106,7 +106,7 @@ class NetSwitch:
             logger.info('No wifi matches.')
             return
 
-        connected = test or wpasup.Wpa(ssid).connect() and wpasup.verify(ssid)
+        connected = test or wpasup.Wpa(ssid).connect() and wpasup.verify_ssid(ssid)
         logger.info(
             'AP ({}) Connected? {}. [{}]'.format(
                 ssid, connected, iface))
