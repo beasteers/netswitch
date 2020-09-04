@@ -112,7 +112,7 @@ def internet_connected(iface=None, n=3):
     result = subprocess.run(
         "ping {} -c {} 8.8.8.8".format(
             '-I {}'.format(iface) if iface else '', n),
-        capture_output=True, check=True, stdout=sys.stderr, shell=True)
+        capture_output=True, check=True, shell=True)
     return not result.stderr
 
 
