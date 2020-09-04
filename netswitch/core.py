@@ -68,6 +68,7 @@ class NetSwitch:
                     util.ifup(iface)
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
+                print(internet_connected(iface))
         # check if internet is connected anyways
         return internet_connected()
 
@@ -109,6 +110,8 @@ class NetSwitch:
         logger.info(
             'AP ({}) Connected? {}. [{}]'.format(
                 ssid, connected, iface))
+        if connected:
+            wpasup.Wpa().parsed
         return connected
 
     def __getitem__(self, index):
@@ -145,7 +148,7 @@ def internet_connected(iface=None, n=3):
             capture_output=True, check=True, shell=True)
         return not result.stderr
     except subprocess.CalledProcessError as e:
-        logger.warning(e.stderr.decode('utf-8'))
+        logger.debug(e.stderr.decode('utf-8'))
 
 
 
