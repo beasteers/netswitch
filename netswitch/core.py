@@ -72,7 +72,7 @@ class NetSwitch:
         # check if internet is connected anyways
         return internet_connected()
 
-    def run(self, interval=10):
+    def run(self, interval=15):
         self.summary()
         self.check()
         while True:
@@ -106,12 +106,12 @@ class NetSwitch:
             logger.info('No wifi matches.')
             return
 
-        connected = test or wpasup.Wpa(ssid).connect()
+        connected = test or wpasup.Wpa(ssid).connect() and wpasup.verify(ssid)
         logger.info(
             'AP ({}) Connected? {}. [{}]'.format(
                 ssid, connected, iface))
         if connected:
-            wpasup.Wpa().parsed
+            print(wpasup.Wpa().parsed)
         return connected
 
     def __getitem__(self, index):
@@ -123,10 +123,7 @@ class NetSwitch:
         print('\n'.join((
             '-'*50,
             'Current Network:',
-            json.dumps(
-                util.mask_dict_values(
-                    wpasup.Wpa().parsed, 'password', drop=('psk',)),
-                indent=4, sort_keys=True),
+            wpasup.Wpa().summary_content(),
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',

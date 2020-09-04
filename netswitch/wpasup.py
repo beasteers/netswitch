@@ -76,11 +76,25 @@ class Wpa:
         except KeyError as e:
             raise AttributeError(e)
 
+    def summary_content(self):
+        import json
+        return json.dumps(
+            util.mask_dict_values(
+                self.parsed, 'password', drop=('psk',)),
+            indent=4, sort_keys=True)
+
+    def summary(self):
+        print(self.summary_content())
+
 
 
 
 def connect(ssid):
     return Wpa(ssid).connect()
+
+
+def verify_ssid(ssid):
+    return Wpa().ssid == ssid
 
 
 def ssid_path(ssid, ap_path=None):
