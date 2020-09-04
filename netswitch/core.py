@@ -135,10 +135,14 @@ class NetSwitch:
 
 def internet_connected(iface=None, n=3):
     '''Check if we're connected to the internet (optionally, check a specific interface `iface`)'''
-    result = subprocess.run(
-        "ping {} -c {} 8.8.8.8".format(
-            '-I {}'.format(iface) if iface else '', n),
-        capture_output=True, check=True, shell=True)
+    try:
+        result = subprocess.run(
+            "ping {} -c {} 8.8.8.8".format(
+                '-I {}'.format(iface) if iface else '', n),
+            capture_output=True, check=True, shell=True)
+    except subprocess.CalledProcessError as e:
+        logger.exception(e)
+        logger.error(e.stderr)
     return not result.stderr
 
 

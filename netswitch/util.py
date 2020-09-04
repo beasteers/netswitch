@@ -40,10 +40,10 @@ def indent(txt, n=1, w=2):
 
 
 
-def ifup(name, sleep=1):
+def ifup(name, sleep=1, force=True):
     try:
         subprocess.run(
-            'ifup {} && sleep {}'.format(name, sleep),
+            'ifup {} {} && sleep {}'.format(name, force*'-f', sleep),
             check=True, stderr=sys.stderr, shell=True)
     except subprocess.CalledProcessError as e:
         logger.exception(e)
@@ -53,8 +53,7 @@ def ifup(name, sleep=1):
 def ifdown(name, sleep=1, force=True):
     try:
         subprocess.run(
-            'ifdown {} {} && sleep {}'.format(
-                name, force * '--force', sleep),
+            'ifdown {} {} && sleep {}'.format(name, force*'-f', sleep),
             check=True, stderr=sys.stderr, shell=True)
     except subprocess.CalledProcessError as e:
         logger.exception(e)
