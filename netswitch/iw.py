@@ -21,11 +21,11 @@ class WLan:
         '''Check if an ap is available.'''
         return any(1 for ap_i in self.scan() if ap in ap_i.ssid)
 
-    def select_best_ssid(self, ssids=None, nmin=3, return_all=False, **kw):
+    def select_best_ssid(self, ssids=None, nmin=3, return_all=False, n_single=4, **kw):
         # handle special cases
         if len(ssids) == 1:
-            logger.info('Checking for network: {}'.format(ssids[0]))
-            return self.ap_available(ssids[0]) and ssids[0]
+            logger.debug('Checking for network: {}'.format(ssids[0]))
+            return any(self.ap_available(ssids[0]) for _ in range(n_single)) and ssids[0]
         # select best
         top_seen, all_seen = self._get_top_ssids(ssids, **kw)
         most_common = Counter(top_seen).most_common(1)

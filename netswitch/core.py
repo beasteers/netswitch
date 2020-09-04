@@ -68,7 +68,6 @@ class NetSwitch:
                     util.ifup(iface)
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
-                print(internet_connected(iface))
         # check if internet is connected anyways
         return internet_connected()
 
@@ -77,7 +76,8 @@ class NetSwitch:
         self.check()
         while True:
             time.sleep(interval)
-            self.check()
+            check = self.check()
+            logger.info('Finished check. Connected to internet? {}'.format(check))
         self.summary()
 
     def connect(self, iface, cfg, **kw):
@@ -110,8 +110,6 @@ class NetSwitch:
         logger.info(
             'AP ({}) Connected? {}. [{}]'.format(
                 ssid, connected, iface))
-        if connected:
-            print(wpasup.Wpa().parsed)
         return connected
 
     def __getitem__(self, index):
