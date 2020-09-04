@@ -31,6 +31,8 @@ switch = netswitch.NetSwitch([
 while True:
     time.sleep(10)
     connected = switch.check()
+# or equivalently
+switch.run(interval=10)
 ```
 
 For example, assume your setup is:

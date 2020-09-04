@@ -64,7 +64,7 @@ class NetSwitch:
         # check if internet is connected anyways
         return internet_connected()
 
-    def run_check(self, interval=10):
+    def run(self, interval=10):
         self.check()
         while True:
             time.sleep(interval)
