@@ -19,8 +19,13 @@ pip install netswitch
 import time
 import netswitch
 
+# point netswitch to the folder of wpa supplicant files
 netswitch.sync_aps('path/to/aps')
 
+# create a new wpa supplicant file
+netswitch.generate_wpa_config('my-network-2G', 'wifipassword')
+
+# create your network switching rules
 switch = netswitch.NetSwitch([
     {'interface': 'wlan*', 'ssids': 'lifeline'},
     'eth*',  # equivalent to {'interface': 'eth*'}
@@ -28,6 +33,7 @@ switch = netswitch.NetSwitch([
     {'interface': 'wlan*'},  # implied - 'ssids': '*'
 ])
 
+# periodically, run your network checks
 while True:
     time.sleep(10)
     connected = switch.check()
