@@ -16,4 +16,4 @@ setuptools.setup(
     # entry_points={'console_scripts': ['{name}={name}:main'.format(name=NAME)]},
     install_requires=['ifcfg', 'access_points', 'pyserial', 'fire'],
     license='MIT License',
-    keywords='')
+    keywords='wifi switching network raspberry pi wpa supplicant wlan wlan0 ppp0 eth0')

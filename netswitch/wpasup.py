@@ -9,7 +9,8 @@ from . import util
 
 logger = logging.getLogger(__name__)
 
-
+def set_ap_path(path):
+    Wpa.ap_path = path
 
 class Wpa:
     ap_path = '/etc/wpa_supplicant/aps'
@@ -18,7 +19,7 @@ class Wpa:
         self.ap_path = ap_path or self.ap_path
         self.iface = iface
         self.path = path or (ssid_path(ssid, self.ap_path) if ssid else self.WPA_PATH)
-        self.ssid = ssid or self.parsed.get('ssid')
+        self.ssid = ssid or self.info.get('ssid')
 
     def connect(self, backup=True, restart=True):
         '''Set ap as current wpa_supplicant.'''
@@ -54,37 +55,37 @@ class Wpa:
         return False
 
     @property
-    def parsed(self):
+    def info(self):
         '''Parse the wpa_supplicant.conf file and return key value pairs.'''
         DROP_KEYS = ('network',)
-        if self._parsed is None:
+        if self._info is None:
             if not self.exists:
                 return {}
             with open(self.path) as wpa_conf:
-                self._parsed = {
+                self._info = {
                     x[0].strip(): x[1].strip('"\' ') for x in
                     (l.split("=", 1) for l in wpa_conf.read().splitlines())
                     if len(x) > 1 and x[0] not in DROP_KEYS
                 }
-                self._parsed['password'] = self._parsed.get('psk')
-        return self._parsed
-    _parsed = None
+                self._info['password'] = self._info.get('psk')
+        return self._info
+    _info = None
 
     def __getattr__(self, k):
         try:
-            return self.parsed[k]
+            return self.info[k]
         except KeyError as e:
             raise AttributeError(e)
 
-    def summary_content(self):
+    def _summary(self):
         import json
         return json.dumps(
             util.mask_dict_values(
-                self.parsed, 'password', drop=('psk',)),
+                self.info, 'password', drop=('psk',)),
             indent=4, sort_keys=True)
 
     def summary(self):
-        print(self.summary_content())
+        print(self._summary())
 
 
 

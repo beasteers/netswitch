@@ -9,6 +9,6 @@ fire.Fire({
     'aps': netswitch.get_aps,
     'iface': netswitch.get_ifaces,
     'connected': netswitch.internet_connected,
-    'restart': netswitch.restart_iface,
+    'restart': netswitch.util.restart_iface,
     'wpa': netswitch.Wpa,
 })

@@ -21,9 +21,10 @@ def get_aps(*ifaces):
 
 def get_ip(*ifaces, key='inet'):
     '''Get the ip of an interface.'''
-    return get_ap_info(key, *ifaces)
+    return get_iface_info(key, *ifaces)
 
 
-def get_ap_info(key, *ifaces):
+def get_iface_info(key, *ifaces):
+    '''Get an attribute for each matching interface.'''
     info = {iface: d.get(key) for iface, d in get_ifaces(*ifaces).items()}
     return {k: v for k, v in info.items() if v is not None}

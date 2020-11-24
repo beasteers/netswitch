@@ -121,7 +121,7 @@ class NetSwitch:
         print('\n'.join((
             '-'*50,
             'Current Network:',
-            wpasup.Wpa().summary_content(),
+            wpasup.Wpa()._summary(),
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
