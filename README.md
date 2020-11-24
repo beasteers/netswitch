@@ -22,7 +22,11 @@ import netswitch
 # tell netswitch where to get its AP list. see explanation below
 netswitch.set_ap_path('path/to/aps')
 
-# create a switcher with your priorities defined
+
+# create a new wpa supplicant file
+netswitch.generate_wpa_config('my-network-2G', 'wifipassword')
+
+# create your network switching rules
 switch = netswitch.NetSwitch([
     {'interface': 'wlan*', 'ssids': 'lifeline'},
     'eth*',  # equivalent to {'interface': 'eth*'}
