@@ -28,3 +28,16 @@ def get_iface_info(key, *ifaces):
     '''Get an attribute for each matching interface.'''
     info = {iface: d.get(key) for iface, d in get_ifaces(*ifaces).items()}
     return {k: v for k, v in info.items() if v is not None}
+
+
+def cli():
+    import fire
+    fire.Fire({
+        'ip': get_ip,
+        'aps': get_aps,
+        'iface': get_ifaces,
+        'connected': internet_connected,
+        'restart': util.restart_iface,
+        'wpa': Wpa,
+        'monitor': monitor,
+    })

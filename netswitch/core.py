@@ -6,6 +6,7 @@ import time
 import fnmatch
 import subprocess
 import ifcfg
+import yaml
 from . import iw, wpasup, util
 # import cachetools.func
 
@@ -13,6 +14,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)  # INFO
+
+
+def monitor(config, interval=10):
+    witch = NetSwitch(config)
+    witch.run(interval=interval)
+    return witch
 
 
 class NetSwitch:
@@ -45,11 +52,20 @@ class NetSwitch:
 
     '''
     wlans = {}  # cache at a class level - move if iw.Wlan gets more specific
-    def __init__(self, cfg):
+    def __init__(self, config=None, lifeline=os.getenv('LIFELINE_SSID'), wifi=None):
+        config = config or ['eth*', 'ppp*', 'wlan*']
         self.config = [
             {'interface': c} if isinstance(c, str) else c
-            for c in (cfg if isinstance(cfg, (list, tuple)) else [cfg])
+            for c in (config if isinstance(config, (list, tuple)) else [config])
         ]
+        if lifeline:
+            self.config = [{'interface': 'wlan*', 'ssids': lifeline}] + self.config
+        for w in wifi:
+            wpasup.generate_wpa_config(**w)
+
+    @classmethod
+    def from_yaml(cls, fname):
+        return cls(**yaml.load(fname))
 
     def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
@@ -71,7 +87,7 @@ class NetSwitch:
         # check if internet is connected anyways
         return internet_connected()
 
-    def run(self, interval=15):
+    def run(self, interval=10):
         self.summary()
         self.check()
         while True:
@@ -106,7 +122,7 @@ class NetSwitch:
             logger.info('No wifi matches.')
             return
 
-        connected = test or wpasup.Wpa(ssid).connect() and wpasup.verify_ssid(ssid)
+        connected = test or wpasup.connect(ssid, verify=True)
         logger.info(
             'AP ({}) Connected? {}. [{}]'.format(
                 ssid, connected, iface))

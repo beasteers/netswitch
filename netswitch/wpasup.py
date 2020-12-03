@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 def set_ap_path(path):
     Wpa.ap_path = path
 
+def connect(ssid, verify=False):
+    return Wpa(ssid).connect() and (not verify or verify_ssid(ssid))
+
+def verify_ssid(ssid):
+    return Wpa().ssid == ssid
+
+
 class Wpa:
     ap_path = '/etc/wpa_supplicant/aps'
     WPA_PATH = "/etc/wpa_supplicant/wpa_supplicant.conf"
@@ -89,15 +96,6 @@ class Wpa:
 
 
 
-
-def connect(ssid):
-    return Wpa(ssid).connect()
-
-
-def verify_ssid(ssid):
-    return Wpa().ssid == ssid
-
-
 def ssid_path(ssid, ap_path=None):
     return os.path.join(ap_path or Wpa.ap_path, f'{ssid}.conf')
 
@@ -143,6 +141,7 @@ def generate_wpa_config(
         status (bool): True if no exception was raised when creating
     '''
     logger.debug("Creating config for: " + str(ssid))
+    password = password or kw.pop('psk', None)
     if askpass and not password:
         import getpass
         password = getpass.getpass()
@@ -151,7 +150,7 @@ def generate_wpa_config(
         network = (
             dict(ssid=ssid, psk=password) if password else
             dict(ssid, key_mgmt='NONE'))
-    elif kind == 'wpa-eap':
+    elif kind == 'edu':
         network = dict(
             ssid=ssid, proto='RSN', key_mgmt='WPA-EAP',
             pairwise='CCMP', phase2="auth=MSCHAPV2",

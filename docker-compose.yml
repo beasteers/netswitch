@@ -1,0 +1,11 @@
+version: '2.7'
+
+services:
+  sonycnode:
+    image: netswitch
+    build: "./"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - /etc/wpa_supplicant:/etc/wpa_supplicant
