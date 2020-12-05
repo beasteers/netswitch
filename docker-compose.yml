@@ -1,11 +1,13 @@
-version: '2.7'
+version: '2.4'
 
 services:
-  sonycnode:
-    image: netswitch
+  netswitch:
+    image: beasteers/netswitch:latest
     build: "./"
     privileged: true
-    cap_add:
-      - NET_ADMIN
+    network_mode: host
+    #cap_add:
+    #  - NET_ADMIN
     volumes:
-      - /etc/wpa_supplicant:/etc/wpa_supplicant
+      - /etc/wpa_supplicant/wpa_supplicant.conf:/etc/wpa_supplicant/wpa_supplicant.conf
+      - ./aps:/etc/wpa_supplicant/aps
