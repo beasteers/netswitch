@@ -9,6 +9,7 @@ import ifcfg
 import yaml
 from . import iw, wpasup, util
 # import cachetools.func
+from .util import internet_connected
 
 import logging
 
@@ -148,19 +149,6 @@ class NetSwitch:
             '-'*50,
         )))
         print()
-
-
-def internet_connected(iface=None, n=3):
-    '''Check if we're connected to the internet (optionally, check a specific interface `iface`)'''
-    try:
-        result = subprocess.run(
-            "ping {} -c {} 8.8.8.8".format(
-                '-I {}'.format(iface) if iface else '', n),
-            capture_output=True, check=True, shell=True)
-        return not result.stderr
-    except subprocess.CalledProcessError as e:
-        logger.debug(e.stderr.decode('utf-8'))
-
 
 
 if __name__ == '__main__':

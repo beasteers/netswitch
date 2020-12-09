@@ -8,8 +8,7 @@ config:
   # then check cellular
   - ppp*
   # then check for any wifi
-  - interface: wlan*
-    ssids: *
+  - wlan*
 
 # define wifi networks as you would see them in a wpa_supplicant file
 # the only difference is we use password instead of psk because what even,,
@@ -17,6 +16,9 @@ config:
 networks:
   - ssid: myhouse
     password: sneakysneaky
+
+  - ssid: work
+    password: blegh
 
   - ssid: nyu
     identity: whodis-isme

@@ -39,26 +39,37 @@ def indent(txt, n=1, w=2):
     return ''.join(' '*w*n + l for l in txt.splitlines(keepends=True))
 
 
+# internet
+
+def internet_connected(iface=None, n=3):
+    '''Check if we're connected to the internet (optionally, check a specific interface `iface`)'''
+    try:
+        result = subprocess.run(
+            "ping {} -c {} 8.8.8.8".format(
+                '-I {}'.format(iface) if iface else '', n),
+            capture_output=True, check=True, shell=True)
+        return not result.stderr
+    except subprocess.CalledProcessError as e:
+        logger.debug(e.stderr.decode('utf-8'))
+
+
+# ifup / ifdown
+
+def _ifupdown_(name, cmd, sleep=1, force=True):
+    try:
+        subprocess.run(
+            'if{} {} {} && sleep {}'.format(cmd, name, force*'--force', sleep),
+            check=True, stderr=sys.stderr, shell=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(e.stderr.decode())
+        return False
+    return True
 
 def ifup(name, sleep=1, force=True):
-    try:
-        subprocess.run(
-            'ifconfig {} up {} && sleep {}'.format(name, force*'--force', sleep),
-            check=True, stderr=sys.stderr, shell=True)
-    except subprocess.CalledProcessError as e:
-        logger.exception(e)
-        return False
-    return True
+    return _ifupdown_('up', name, sleep=sleep, force=force)
 
 def ifdown(name, sleep=1, force=True):
-    try:
-        subprocess.run(
-            'ifconfig {} down {} && sleep {}'.format(name, force*'--force', sleep),
-            check=True, stderr=sys.stderr, shell=True)
-    except subprocess.CalledProcessError as e:
-        logger.exception(e)
-        return False
-    return True
+    return _ifupdown_('down', name, sleep=sleep, force=force)
 
 def restart_iface(name=None, sleep=3):
     '''Restart the specified network interface. Returns True if restarted without error.'''
