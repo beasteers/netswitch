@@ -167,7 +167,8 @@ class NetSwitch:
 
 
 #@_debug_args
-def monitor(config=None, interval=10, **kw):
+# @functools.wraps(NetSwitch)
+def run(config=None, interval=10, **kw):
     witch = NetSwitch(config, **kw)
     witch.run(interval=interval)
     return witch

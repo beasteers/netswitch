@@ -39,5 +39,5 @@ def cli():
         'connected': internet_connected,
         'restart': util.restart_iface,
         'wpa': Wpa,
-        'monitor': monitor,
+        'run': run,
     })
