@@ -38,7 +38,7 @@ class WLan:
     def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=30):
         all_seen, top_seen = set(), []
         t0 = time.time()
-        logger.info('Selecting best network from: {}'.format(ssids or 'all'))
+        #logger.debug('Selecting best network from: {}'.format(ssids or 'all'))
         while len(top_seen) < nscans:
             sids = [ap.ssid for ap in self.scan()]
             trusted = [s for s in sids if s in ssids] if ssids else sids

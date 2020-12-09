@@ -86,10 +86,9 @@ class Wpa:
 
     def _summary(self):
         import json
-        return json.dumps(
-            util.mask_dict_values(
-                self.info, 'password', drop=('psk',)),
-            indent=4, sort_keys=True)
+        cfg = util.mask_dict_values(
+                self.info, 'password', drop=('psk', 'ctrl_interface', 'update_config'))
+        return json.dumps(cfg, indent=4 if len(cfg) > 3 else None, sort_keys=True)
 
     def summary(self):
         print(self._summary())

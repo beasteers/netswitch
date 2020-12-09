@@ -82,6 +82,9 @@ class NetSwitch:
         for w in networks or ():
             wpasup.generate_wpa_config(**w)
 
+    def __str__(self):
+        return self._summary()
+
     def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
         interfaces = ifcfg.interfaces()
@@ -97,7 +100,7 @@ class NetSwitch:
             for iface in sorted(ifaces, reverse=True):
                 if not interfaces[iface].get('inet'):
                     util.ifup(iface)
-                    logger.info('ifup {} {}'.format(iface, interfaces[iface].get('inet')))
+                    #logger.info('ifup {} {}'.format(iface, interfaces[iface].get('inet')))
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
         # check if internet is connected anyways
@@ -147,30 +150,35 @@ class NetSwitch:
     def __getitem__(self, index):
         return self.__class__(self.config[index])
 
-    def summary(self):
+    def _summary(self):
         import json
-        print()
-        print('\n'.join((
+        return '\n' + '\n'.join((
             '-'*50,
             'Current Network:',
             wpasup.Wpa()._summary(),
+            'Trusted APs: {}'.format(', '.join(wpasup.ssids_from_dir(wpasup.Wpa.ap_path))),
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
-            '\n'.join('\t{:<12}: {:>16} {:>18}'.format(
+            '\n'.join('\t{:<16}: {:>16} {:>18}'.format(
                 str(d.get('device')), str(d.get('inet')), str(d.get('ether')),
             ) for d in ifcfg.interfaces().values()),
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '-'*50,
-        )))
-        print()
+        )) + '\n'
+
+    def summary(self):
+        print(self._summary())
 
 
 #@_debug_args
 # @functools.wraps(NetSwitch)
-def run(config=None, interval=10, **kw):
+def run(config=None, interval=30, **kw):
     witch = NetSwitch(config, **kw)
-    witch.run(interval=interval)
+    try:
+        witch.run(interval=interval)
+    except KeyboardInterrupt:
+        print('Interrupted.')
     return witch
 
 

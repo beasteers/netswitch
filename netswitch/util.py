@@ -29,7 +29,7 @@ def flatten(*items):
 
 def mask_dict_values(dct, *keys, ch='*', drop=None):
     return {
-        k: '*'*len(v) if v in keys else v
+        k: '*'*len(v) if k in keys else v
         for k, v in dct.items()
         if not drop or k not in drop
     }
@@ -50,18 +50,19 @@ def internet_connected(iface=None, n=3):
             capture_output=True, check=True, shell=True)
         return not result.stderr
     except subprocess.CalledProcessError as e:
-        logger.debug(e.stderr.decode('utf-8'))
+        #logger.debug(e.stderr.decode('utf-8'))
+        pass
 
 
 # ifup / ifdown
 
-def _ifupdown_(name, cmd, sleep=1, force=True):
+def _ifupdown_(cmd, name, sleep=1, force=True):
     try:
         subprocess.run(
             'if{} {} {} && sleep {}'.format(cmd, name, force*'--force', sleep),
-            check=True, stderr=sys.stderr, shell=True)
+            check=True, capture_output=True, shell=True)
     except subprocess.CalledProcessError as e:
-        logger.error(e.stderr.decode())
+        logger.error(e.stderr and e.stderr.decode())
         return False
     return True
 
