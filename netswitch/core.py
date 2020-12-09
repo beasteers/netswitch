@@ -1,8 +1,10 @@
 import os
+import re
 import sys
 import glob
 import time
 # import shlex
+import functools
 import fnmatch
 import subprocess
 import ifcfg
@@ -17,10 +19,23 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)  # INFO
 
 
-def monitor(config, interval=10):
-    witch = NetSwitch(config)
-    witch.run(interval=interval)
-    return witch
+
+def _debug_args(func):
+    def inner(*a, **kw):
+        print('calling', func.__name__, a, kw)
+        return func(*a, **kw)
+    return inner
+
+
+def _maybe_load_yaml(func):  # this is so that we can pull parameters from a yaml file
+    #@_debug_args
+    @functools.wraps(func)
+    def inner(self, config=None, **kw):
+        if isinstance(config, str):
+            kw = dict(yaml.load(config), **kw)
+            config = kw.pop('config', None)
+        return func(self, config, **kw)
+    return inner
 
 
 class NetSwitch:
@@ -53,7 +68,8 @@ class NetSwitch:
 
     '''
     wlans = {}  # cache at a class level - move if iw.Wlan gets more specific
-    def __init__(self, config=None, lifeline=os.getenv('LIFELINE_SSID'), wifi=None):
+    @_maybe_load_yaml
+    def __init__(self, config=None, lifeline=os.getenv('LIFELINE_SSID'), networks=None, ap_path=None):
         config = config or ['eth*', 'ppp*', 'wlan*']
         self.config = [
             {'interface': c} if isinstance(c, str) else c
@@ -61,12 +77,10 @@ class NetSwitch:
         ]
         if lifeline:
             self.config = [{'interface': 'wlan*', 'ssids': lifeline}] + self.config
-        for w in wifi:
+        if ap_path:
+            wpasup.set_ap_path(ap_path)
+        for w in networks or ():
             wpasup.generate_wpa_config(**w)
-
-    @classmethod
-    def from_yaml(cls, fname):
-        return cls(**yaml.load(fname))
 
     def check(self, test=False):
         '''Check internet connections and interfaces. Return True if connected.'''
@@ -83,6 +97,7 @@ class NetSwitch:
             for iface in sorted(ifaces, reverse=True):
                 if not interfaces[iface].get('inet'):
                     util.ifup(iface)
+                    logger.info('ifup {} {}'.format(iface, interfaces[iface].get('inet')))
                 if self.connect(iface, cfg) and internet_connected(iface):
                     return True
         # check if internet is connected anyways
@@ -149,6 +164,13 @@ class NetSwitch:
             '-'*50,
         )))
         print()
+
+
+#@_debug_args
+def monitor(config=None, interval=10, **kw):
+    witch = NetSwitch(config, **kw)
+    witch.run(interval=interval)
+    return witch
 
 
 if __name__ == '__main__':
