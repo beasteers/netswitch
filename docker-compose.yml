@@ -10,4 +10,6 @@ services:
     #  - NET_ADMIN
     volumes:
       - /etc/wpa_supplicant/wpa_supplicant.conf:/etc/wpa_supplicant/wpa_supplicant.conf
-      - ./aps:/etc/wpa_supplicant/aps
+      - /etc/wpa_supplicant/aps:/etc/wpa_supplicant/aps
+    environment:
+      LIFELINE_SSID: s0nycL1f3l1ne

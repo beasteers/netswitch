@@ -69,13 +69,15 @@ class NetSwitch:
     '''
     wlans = {}  # cache at a class level - move if iw.Wlan gets more specific
     @_maybe_load_yaml
-    def __init__(self, config=None, lifeline=os.getenv('LIFELINE_SSID'), networks=None, ap_path=None):
+    def __init__(self, config=None, lifeline=os.getenv('LIFELINE_SSID'), networks=None, ap_path=None, restart_missing_ip=False):
         config = config or ['eth*', 'ppp*', 'wlan*']
         self.config = [
             {'interface': c} if isinstance(c, str) else c
             for c in (config if isinstance(config, (list, tuple)) else [config])
         ]
+        self.restart_missing_ip = restart_missing_ip
         if lifeline:
+            logger.info('Using lifeline network: {}'.format(lifeline))
             self.config = [{'interface': 'wlan*', 'ssids': lifeline}] + self.config
         if ap_path:
             wpasup.set_ap_path(ap_path)
@@ -97,8 +99,9 @@ class NetSwitch:
 
             logger.info('Iface {} - matches {}'.format(cfg['interface'], ifaces))
             # try to connect in order of wlan1, wlan0
+            restart_missing = cfg.get('restart_missing_ip', self.restart_missing_ip)
             for iface in sorted(ifaces, reverse=True):
-                if not interfaces[iface].get('inet'):
+                if restart_missing and not interfaces[iface].get('inet'):
                     util.ifup(iface)
                     #logger.info('ifup {} {}'.format(iface, interfaces[iface].get('inet')))
                 if self.connect(iface, cfg) and internet_connected(iface):
@@ -156,7 +159,8 @@ class NetSwitch:
             '-'*50,
             'Current Network:',
             wpasup.Wpa()._summary(),
-            'Trusted APs: {}'.format(', '.join(wpasup.ssids_from_dir(wpasup.Wpa.ap_path))),
+            '', 'Trusted APs: {}'.format(', '.join(wpasup.ssids_from_dir(wpasup.Wpa.ap_path))),
+            '', 'Config: {}'.format(self.config),
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
@@ -168,12 +172,12 @@ class NetSwitch:
         )) + '\n'
 
     def summary(self):
-        print(self._summary())
+        logger.info(self._summary())
 
 
 #@_debug_args
 # @functools.wraps(NetSwitch)
-def run(config=None, interval=30, **kw):
+def run(config=None, interval=20, **kw):
     witch = NetSwitch(config, **kw)
     try:
         witch.run(interval=interval)

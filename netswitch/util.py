@@ -48,6 +48,7 @@ def internet_connected(iface=None, n=3):
             "ping {} -c {} 8.8.8.8".format(
                 '-I {}'.format(iface) if iface else '', n),
             capture_output=True, check=True, shell=True)
+        #logger.info('connected? {} - {}, {}'.format(not result.stderr, result.stdout, result.stderr))
         return not result.stderr
     except subprocess.CalledProcessError as e:
         #logger.debug(e.stderr.decode('utf-8'))
@@ -59,7 +60,8 @@ def internet_connected(iface=None, n=3):
 def _ifupdown_(cmd, name, sleep=1, force=True):
     try:
         subprocess.run(
-            'if{} {} {} && sleep {}'.format(cmd, name, force*'--force', sleep),
+            #'if{} {} {} && sleep {}'.format(cmd, name, force*'--force', sleep),
+            'ifconfig {} {} && sleep {}'.format(name, cmd, sleep),
             check=True, capture_output=True, shell=True)
     except subprocess.CalledProcessError as e:
         logger.error(e.stderr and e.stderr.decode())
