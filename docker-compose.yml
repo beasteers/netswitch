@@ -9,7 +9,6 @@ services:
     #cap_add:
     #  - NET_ADMIN
     volumes:
-      - /etc/wpa_supplicant/wpa_supplicant.conf:/etc/wpa_supplicant/wpa_supplicant.conf
-      - /etc/wpa_supplicant/aps:/etc/wpa_supplicant/aps
+      - /etc/wpa_supplicant:/etc/wpa_supplicant
     environment:
-      LIFELINE_SSID: s0nycL1f3l1ne
+      LIFELINE_SSID: iot-lifeline
