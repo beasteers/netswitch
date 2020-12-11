@@ -6,6 +6,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# def _debug_args(func):
+#     def inner(*a, **kw):
+#         print('calling', func.__name__, a, kw)
+#         return func(*a, **kw)
+#     return inner
+
+
 def matches(pattern, items):
     patterns = list(flatten(pattern)) or ['*']
     return [
@@ -37,6 +44,10 @@ def mask_dict_values(dct, *keys, ch='*', drop=None):
 
 def indent(txt, n=1, w=2):
     return ''.join(' '*w*n + l for l in txt.splitlines(keepends=True))
+
+
+def abbr_config(value, key):
+    return value if isinstance(value, dict) else {key: value}
 
 
 # internet

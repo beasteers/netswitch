@@ -1,7 +1,10 @@
+import os
+import glob
 import time
 from collections import Counter
 from access_points import get_scanner
 import logging
+from . import util, wpasup
 
 
 logger = logging.getLogger(__name__)
@@ -52,3 +55,20 @@ class WLan:
             if timeout and time.time() - t0 >= timeout:
                 break
         return top_seen, all_seen
+
+    def connect(self, ssids='*', test=False, **kw):
+        # coerce to list of globs
+        ssids = [
+            os.path.splitext(os.path.basename(s))[0]
+            for pat in util.flatten(ssids)
+            for s in glob.glob(wpasup.ssid_path(pat))]
+
+        # check for available ssids and take best one
+        ssid = self.select_best_ssid(ssids)
+        if not ssid:
+            logger.info('No wifi matches.')
+            return
+
+        connected = test or wpasup.connect(ssid, verify=True)
+        logger.info('AP ({}) Connected? {}. [{}]'.format(ssid, connected, self.iface))
+        return connected

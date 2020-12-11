@@ -1,16 +1,10 @@
 import os
-import re
-import sys
-import glob
 import time
-# import shlex
 import functools
 import fnmatch
-import subprocess
 import ifcfg
 import yaml
 from . import iw, wpasup, util
-# import cachetools.func
 from .util import internet_connected
 
 import logging
@@ -18,24 +12,6 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)  # INFO
 
-
-
-def _debug_args(func):
-    def inner(*a, **kw):
-        print('calling', func.__name__, a, kw)
-        return func(*a, **kw)
-    return inner
-
-
-def _maybe_load_yaml(func):  # this is so that we can pull parameters from a yaml file
-    #@_debug_args
-    @functools.wraps(func)
-    def inner(self, config=None, **kw):
-        if isinstance(config, str):
-            kw = dict(yaml.load(config), **kw)
-            config = kw.pop('config', None)
-        return func(self, config, **kw)
-    return inner
 
 
 class NetSwitch:
@@ -67,91 +43,94 @@ class NetSwitch:
      - check if internet is already connected thru any interface
 
     '''
-    wlans = {}  # cache at a class level - move if iw.Wlan gets more specific
-    @_maybe_load_yaml
-    def __init__(self, config=None, lifeline=os.getenv('LIFELINE_SSID'), networks=None, ap_path=None, restart_missing_ip=False):
-        config = config or ['eth*', 'ppp*', 'wlan*']
-        self.config = [
-            {'interface': c} if isinstance(c, str) else c
-            for c in (config if isinstance(config, (list, tuple)) else [config])
-        ]
+    _iface_objs = {}  # cache at a class level - move if iw.Wlan gets more specific
+    restart_missing_ip = False
+    interfaces = ()
+    interval = 0
+
+    # initialization
+
+    def _on_config_update(self,
+            interfaces=None, lifeline=os.getenv('LIFELINE_SSID'),
+            networks=None, ap_path=None, restart_missing_ip=False, interval=20):
+        self.interval = interval
         self.restart_missing_ip = restart_missing_ip
+        self.interfaces = (
+            ([{'interface': 'wlan*', 'ssids': lifeline}] if lifeline else []) + [
+                util.abbr_config(c, 'interface') for c in util.flatten(
+                    ['eth*', 'ppp*', 'wlan*'] if interfaces is None else interfaces or [])
+            ]
+        )
+
         if lifeline:
-            logger.info('Using lifeline network: {}'.format(lifeline))
-            self.config = [{'interface': 'wlan*', 'ssids': lifeline}] + self.config
+            logger.info('Using lifeline network: %s', lifeline)
         if ap_path:
             wpasup.set_ap_path(ap_path)
         for w in networks or ():
             wpasup.generate_wpa_config(**w)
 
-    def __str__(self):
-        return self._summary()
+    @functools.wraps(_on_config_update)
+    def __init__(self, __config=None, **kw):
+        fname = __config if isinstance(__config, str) else None
+        if not fname:
+            kw['interfaces'] = __config
+        self.config = Config(fname, self._on_config_update, **kw)
 
-    def check(self, test=False):
+    # public interface
+
+    def check(self):
         '''Check internet connections and interfaces. Return True if connected.'''
+        self.config.refresh()
         interfaces = ifcfg.interfaces()
         logger.info('Interfaces: {}'.format(list(interfaces)))
-        for cfg in self.config:
+        for cfg in self.interfaces:
             # check if any matching interfaces are available
-            ifaces = [
-                i for i in interfaces
-                if fnmatch.fnmatch(i, cfg['interface'])]
-
+            ifaces = [i for i in interfaces if fnmatch.fnmatch(i, cfg['interface'])]
             logger.info('Iface {} - matches {}'.format(cfg['interface'], ifaces))
+
             # try to connect in order of wlan1, wlan0
             restart_missing = cfg.get('restart_missing_ip', self.restart_missing_ip)
             for iface in sorted(ifaces, reverse=True):
                 if restart_missing and not interfaces[iface].get('inet'):
                     util.ifup(iface)
-                    #logger.info('ifup {} {}'.format(iface, interfaces[iface].get('inet')))
-                if self.connect(iface, cfg) and internet_connected(iface):
+                if self.connect(iface, **cfg) and internet_connected(iface):
                     return True
         # check if internet is connected anyways
         return internet_connected()
 
-    def run(self, interval=10):
+    def run(self, interval=None):
+        interval = self.interval if interval is None else interval
         self.summary()
         self.check()
         while True:
             time.sleep(interval)
-            check = self.check()
-            # logger.debug('Finished check. Connected to internet? {}'.format(check))
+            self.check()
         self.summary()
 
-    def connect(self, iface, cfg, **kw):
+    # internal interface
+
+    def connect(self, iface, **kw):
         '''Connect to an interface.'''
+        if iface not in self._iface_objs:
+            self._iface_objs[iface] = self._get_iface_obj(iface)
+        connect = getattr(self._iface_objs.get(iface), 'connect', None)
+        return connect(**kw) if callable(connect) else True
+
+    def _get_iface_obj(self, iface):
         if fnmatch.fnmatch(iface, 'wlan*'):
-            return self.connect_wlan(iface, cfg, **kw)
-        return True
+            return iw.WLan(iface=iface)
+        return
 
-    def connect_wlan(self, iface, cfg, test=False):
-        # get the wlan connection object
-        if iface not in self.wlans:  # cache it for future use
-            self.wlans[iface] = iw.WLan(iface=iface)
-        wlan = self.wlans[iface]
-
-        # get matching ssids
-        ssids = cfg.get('ssids', '*')
-        if not isinstance(ssids, (list, tuple)):  # coerce to list of globs
-            ssids = [ssids]
-        ssids = [
-            os.path.splitext(os.path.basename(s))[0] for pat in ssids
-            for s in glob.glob(wpasup.ssid_path(pat))]
-
-        # check for available ssids and take best one
-        ssid = wlan.select_best_ssid(ssids)
-        if not ssid:
-            logger.info('No wifi matches.')
-            return
-
-        connected = test or wpasup.connect(ssid, verify=True)
-        logger.info(
-            'AP ({}) Connected? {}. [{}]'.format(
-                ssid, connected, iface))
-        return connected
+    # supplimentary interface
 
     def __getitem__(self, index):
-        return self.__class__(self.config[index])
+        return self.__class__(self.interfaces[index])
+
+    def __str__(self):
+        return self._summary()
+
+    def summary(self):
+        logger.info(self._summary())
 
     def _summary(self):
         import json
@@ -171,11 +150,49 @@ class NetSwitch:
             '-'*50,
         )) + '\n'
 
-    def summary(self):
-        logger.info(self._summary())
+
+class Config(dict):
+    _mtime = None
+    def __init__(self, fname, on_update=None, filter_none_=False, **kw):
+        super().__init__()
+        self.fname = fname
+        self.on_update = on_update
+        if filter_none_:
+            kw = {k: v for k, v in kw.items() if v is not None}
+        self._passed_kw = kw
+        self.refresh(force=True)
+
+    def __getattr__(self, key):
+        if key not in self:
+            raise AttributeError(key)
+        return self[key]
+
+    def refresh(self, force=False):
+        # check time, maybe load file
+        new, mtime = {}, None
+        if self.fname and os.path.isfile(self.fname):
+            mtime = os.path.getmtime(self.fname)
+            if not force and self._mtime and mtime == self._mtime:
+                return   # there was a file before and it is the same
+            new = yaml.load(self.fname)
+        elif not force and self._mtime is None:
+            return  # there was no file before, and there's still not one
+
+        # keep going for: old file -> new file, file -> no file, no file -> file
+        # update the callbacks
+        new = dict(new, **self._passed_kw)
+        if callable(self.on_update):
+            modified = self.on_update(**new)
+            if modified is not None:  # on_update can return a modified config
+                new = modified
+
+        # update the config object
+        self.clear()
+        self.update(new)
+        self._mtime = mtime
 
 
-#@_debug_args
+#@util._debug_args
 # @functools.wraps(NetSwitch)
 def run(config=None, interval=20, **kw):
     witch = NetSwitch(config, **kw)
