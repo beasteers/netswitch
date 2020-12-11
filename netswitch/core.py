@@ -174,7 +174,8 @@ class Config(dict):
             mtime = os.path.getmtime(self.fname)
             if not force and self._mtime and mtime == self._mtime:
                 return   # there was a file before and it is the same
-            new = yaml.load(self.fname)
+            with open(self.fname, 'r') as f:
+                new = yaml.load(f)
         elif not force and self._mtime is None:
             return  # there was no file before, and there's still not one
 

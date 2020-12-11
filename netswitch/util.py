@@ -6,11 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# def _debug_args(func):
-#     def inner(*a, **kw):
-#         print('calling', func.__name__, a, kw)
-#         return func(*a, **kw)
-#     return inner
+def _debug_args(func):
+    def inner(*a, **kw):
+        print('calling', func.__name__, a, kw)
+        return func(*a, **kw)
+    return inner
 
 
 def matches(pattern, items):
