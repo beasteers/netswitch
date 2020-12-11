@@ -1,5 +1,6 @@
 import os
 import glob
+import math
 import time
 from collections import Counter
 from access_points import get_scanner
@@ -25,16 +26,17 @@ class WLan:
         '''Check if an ap is available.'''
         return any(1 for ap_i in self.scan() if ap in ap_i.ssid)
 
-    def select_best_ssid(self, ssids=None, nmin=3, return_all=False, n_single=4, **kw):
-        # handle special cases
-        if len(ssids) == 1:
-            logger.debug('Checking for network: {}'.format(ssids[0]))
-            return any(self.ap_available(ssids[0]) for _ in range(n_single)) and ssids[0]
+    def select_best_ssid(self, ssids=None, top=0.5, return_all=False, nscans=5, **kw): #, n_single=4
+        ## handle special cases
+        #if len(ssids) == 1:
+        #    logger.debug('Checking for network: {}'.format(ssids[0]))
+        #    return any(self.ap_available(ssids[0]) for _ in range(n_single)) and ssids[0]
         # select best
-        top_seen, all_seen = self._get_top_ssids(ssids, **kw)
+        nmin = math.ceil(nscans*top)
+        top_seen, all_seen = self._get_top_ssids(ssids, nscans=nscans, **kw)
         most_common = Counter(top_seen).most_common(1)
         ap, count = most_common[0] if most_common else (None, -1)
-        out_ap = count >= nmin and ap
+        out_ap = count >= top and ap
         if ap and not out_ap:
             logger.debug('AP ({}) was available but not strong enough ({}/{}).'.format(ap, count, nmin))
         return (out_ap, all_seen) if return_all else out_ap
@@ -57,6 +59,7 @@ class WLan:
         return top_seen, all_seen
 
     def connect(self, ssids='*', test=False, **kw):
+        # current = wpasup.Wpa().ssid
         # coerce to list of globs
         ssids = [
             os.path.splitext(os.path.basename(s))[0]
@@ -70,5 +73,7 @@ class WLan:
             return
 
         connected = test or wpasup.connect(ssid, verify=True)
+        # if not connected and current:
+        #     logger.info('Could not connect to {}. reverting back to {}')
         logger.info('AP ({}) Connected? {}. [{}]'.format(ssid, connected, self.iface))
         return connected
