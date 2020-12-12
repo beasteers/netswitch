@@ -14,6 +14,17 @@ logging.basicConfig(level=logging.DEBUG)  # INFO
 
 
 
+def log_kw(msg):
+    def outer(func):
+        msg_ = msg or func.__name__
+        @functools.wraps(func)
+        def inner(**kw):
+            logger.info('{}: {}'.format(msg_, kw))
+            return func(**kw)
+        return inner
+    return outer(msg) if callable(msg) else outer
+
+
 class NetSwitch:
     '''
 
@@ -49,8 +60,8 @@ class NetSwitch:
     interval = 0
 
     # initialization
-
-    def _on_config_update(self,
+    @log_kw('Config updated')
+    def _on_config_update(self, *,
             interfaces=None, lifeline=os.getenv('LIFELINE_SSID'),
             networks=None, ap_path=None, restart_missing_ip=False, interval=20):
         self.interval = interval

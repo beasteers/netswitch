@@ -15,6 +15,7 @@ class WLan:
     def __init__(self, iface='wlan0'):
         self.iface = iface
         self.wifi_scanner = get_scanner(iface)
+        self._failed_ssids = {}
 
     def scan(self, trusted=None):
         aps = self.wifi_scanner.get_access_points()
@@ -41,13 +42,18 @@ class WLan:
             logger.debug('AP ({}) was available but not strong enough ({}/{}).'.format(ap, count, nmin))
         return (out_ap, all_seen) if return_all else out_ap
 
-    def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=30):
+    def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=30, nfails=3):
         all_seen, top_seen = set(), []
         t0 = time.time()
         #logger.debug('Selecting best network from: {}'.format(ssids or 'all'))
         while len(top_seen) < nscans:
+            # get ssid names
             sids = [ap.ssid for ap in self.scan()]
+            # filter only the trusted ones
             trusted = [s for s in sids if s in ssids] if ssids else sids
+            # remove any failed ssids
+            trusted = [s for s in trusted if self._failed_ssids.get(s, 0) < nfails]
+
             logger.info('Scan {} - trusted: {}, all={}'.format(
                 len(top_seen), trusted, len(sids)))
             all_seen.update(trusted)
@@ -59,7 +65,8 @@ class WLan:
         return top_seen, all_seen
 
     def connect(self, ssids='*', test=False, **kw):
-        # current = wpasup.Wpa().ssid
+        current = wpasup.Wpa().ssid
+        originally_connected = util.internet_connected(self.iface)
         # coerce to list of globs
         ssids = [
             os.path.splitext(os.path.basename(s))[0]
@@ -72,8 +79,13 @@ class WLan:
             logger.info('No wifi matches.')
             return
 
+        # connect to new network, revert if it failed (e.g. the password was wrong)
         connected = test or wpasup.connect(ssid, verify=True)
-        # if not connected and current:
-        #     logger.info('Could not connect to {}. reverting back to {}')
+        if not connected and current and originally_connected:
+            self._failed_ssids[ssid] = self._failed_ssids.get(ssid, 0) + 1
+            logger.warning('Could not connect to {}. reverting back to {}'.format(ssid, current))
+            ssid = current
+            test or wpasup.connect(ssid, verify=True)
+
         logger.info('AP ({}) Connected? {}. [{}]'.format(ssid, connected, self.iface))
         return connected
