@@ -1,4 +1,4 @@
-FROM balenalib/raspberrypi3-python:latest
+FROM python:slim
 
 RUN apt-get -q update && apt-get -qy install wireless-tools && rm -rf /var/lib/apt/lists/*
 

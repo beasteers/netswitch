@@ -10,7 +10,8 @@ from .util import internet_connected
 import logging
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)  # INFO
+logger.setLevel(logging.INFO)
+logging.basicConfig()  # INFO
 
 
 
@@ -18,9 +19,9 @@ def log_kw(msg):
     def outer(func):
         msg_ = msg or func.__name__
         @functools.wraps(func)
-        def inner(**kw):
+        def inner(*a, **kw):
             logger.info('{}: {}'.format(msg_, kw))
-            return func(**kw)
+            return func(*a, **kw)
         return inner
     return outer(msg) if callable(msg) else outer
 
@@ -67,14 +68,14 @@ class NetSwitch:
         self.interval = interval
         self.restart_missing_ip = restart_missing_ip
         self.interfaces = (
-            ([{'interface': 'wlan*', 'ssids': lifeline}] if lifeline else []) + [
+                ([{'interface': 'wlan*', 'ssids': lifeline, 'require_internet': False}] if lifeline else []) + [
                 util.abbr_config(c, 'interface') for c in util.flatten(
                     ['eth*', 'ppp*', 'wlan*'] if interfaces is None else interfaces or [])
             ]
         )
 
         if lifeline:
-            logger.info('Using lifeline network: %s', lifeline)
+            logger.debug('Using lifeline network: %s', lifeline)
         if ap_path:
             wpasup.set_ap_path(ap_path)
         for w in networks or ():
@@ -83,7 +84,7 @@ class NetSwitch:
     @functools.wraps(_on_config_update)
     def __init__(self, __config=None, **kw):
         fname = __config if isinstance(__config, str) else None
-        if not fname:
+        if not fname and __config:
             kw['interfaces'] = __config
         self.config = Config(fname, self._on_config_update, **kw)
 
@@ -93,18 +94,21 @@ class NetSwitch:
         '''Check internet connections and interfaces. Return True if connected.'''
         self.config.refresh()
         interfaces = ifcfg.interfaces()
-        logger.info('Interfaces: {}'.format(list(interfaces)))
+        logger.info('Interfaces: {}'.format(', '.join(interfaces) or '--'))
         for cfg in self.interfaces:
             # check if any matching interfaces are available
             ifaces = [i for i in interfaces if fnmatch.fnmatch(i, cfg['interface'])]
-            logger.info('Iface {} - matches {}'.format(cfg['interface'], ifaces))
+            logger.debug('Iface {} - matches {}'.format(cfg['interface'], ', '.join(ifaces) or '--'))
 
             # try to connect in order of wlan1, wlan0
             restart_missing = cfg.get('restart_missing_ip', self.restart_missing_ip)
             for iface in sorted(ifaces, reverse=True):
                 if restart_missing and not interfaces[iface].get('inet'):
                     util.ifup(iface)
-                if self.connect(iface, **cfg) and internet_connected(iface):
+                #c1,c2=self.connect(iface, **cfg), (not cfg.get('require_internet', True) or internet_connected(iface))
+                #logger.info(str((c1,c2)))
+                if self.connect(iface, **cfg) and (not cfg.get('require_internet', True) or internet_connected(iface)):
+                    #logger.info('allset!')
                     return True
         # check if internet is connected anyways
         return internet_connected()
@@ -150,7 +154,7 @@ class NetSwitch:
             'Current Network:',
             wpasup.Wpa()._summary(),
             '', 'Trusted APs: {}'.format(', '.join(wpasup.ssids_from_dir(wpasup.Wpa.ap_path))),
-            '', 'Config: {}'.format(self.config),
+            '', 'Priority Config: {}'.format(self.interfaces),
             # '', 'Available Networks:',
             # json.dumps(ifcfg.interfaces(), indent=4, sort_keys=True),
             '', 'Interfaces:',
@@ -186,8 +190,11 @@ class Config(dict):
             if not force and self._mtime and mtime == self._mtime:
                 return   # there was a file before and it is the same
             with open(self.fname, 'r') as f:
-                new = yaml.load(f)
+                new = yaml.safe_load(f)
         elif not force and self._mtime is None:
+            if self.fname:
+                logger.warning('Config file {} was specified, but was not '
+                               'found. Assuming a blank configuration.'.format(self.fname))
             return  # there was no file before, and there's still not one
 
         # keep going for: old file -> new file, file -> no file, no file -> file

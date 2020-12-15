@@ -9,6 +9,7 @@ from . import util, wpasup
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class WLan:
@@ -28,9 +29,8 @@ class WLan:
         return any(1 for ap_i in self.scan() if ap in ap_i.ssid)
 
     def select_best_ssid(self, ssids=None, top=0.5, return_all=False, nscans=5, **kw): #, n_single=4
-        ## handle special cases
-        #if len(ssids) == 1:
-        #    logger.debug('Checking for network: {}'.format(ssids[0]))
+        if ssids and len(ssids) < 3:
+            logger.info('[{}] Checking for networks: {}'.format(self.iface, ', '.join(ssids)))
         #    return any(self.ap_available(ssids[0]) for _ in range(n_single)) and ssids[0]
         # select best
         nmin = math.ceil(nscans*top)
@@ -39,7 +39,7 @@ class WLan:
         ap, count = most_common[0] if most_common else (None, -1)
         out_ap = count >= top and ap
         if ap and not out_ap:
-            logger.debug('AP ({}) was available but not strong enough ({}/{}).'.format(ap, count, nmin))
+            logger.debug('AP ({}) was seen but not strong enough ({}/{}).'.format(ap, count, nmin))
         return (out_ap, all_seen) if return_all else out_ap
 
     def _get_top_ssids(self, ssids=None, nscans=5, throttle=1, timeout=30, nfails=3):
@@ -50,11 +50,11 @@ class WLan:
             # get ssid names
             sids = [ap.ssid for ap in self.scan()]
             # filter only the trusted ones
-            trusted = [s for s in sids if s in ssids] if ssids else sids
+            trusted = [s for s in sids if s in ssids] if ssids is not None else sids
             # remove any failed ssids
             trusted = [s for s in trusted if self._failed_ssids.get(s, 0) < nfails]
 
-            logger.info('Scan {} - trusted: {}, all={}'.format(
+            logger.debug('Scan {} - trusted: {}, all={}'.format(
                 len(top_seen), trusted, len(sids)))
             all_seen.update(trusted)
             top_seen.extend(trusted[:1])
@@ -72,11 +72,14 @@ class WLan:
             os.path.splitext(os.path.basename(s))[0]
             for pat in util.flatten(ssids)
             for s in glob.glob(wpasup.ssid_path(pat))]
+        if not ssids:
+            logger.warning('No ssid conf files found matching the provided pattern. Check your aps directory.')
+            return
 
         # check for available ssids and take best one
         ssid = self.select_best_ssid(ssids)
         if not ssid:
-            logger.info('No wifi matches.')
+            logger.info('[{}] No ssid matches.'.format(self.iface))
             return
 
         # connect to new network, revert if it failed (e.g. the password was wrong)
@@ -85,7 +88,7 @@ class WLan:
             self._failed_ssids[ssid] = self._failed_ssids.get(ssid, 0) + 1
             logger.warning('Could not connect to {}. reverting back to {}'.format(ssid, current))
             ssid = current
-            test or wpasup.connect(ssid, verify=True)
+            connected = test or wpasup.connect(ssid, verify=True)
 
-        logger.info('AP ({}) Connected? {}. [{}]'.format(ssid, connected, self.iface))
+        logger.info('[{}] AP ({}) Connected? {}.'.format(self.iface, ssid, connected))
         return connected

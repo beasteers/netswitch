@@ -1,38 +1,38 @@
-# the netswitch interface priority config
-config:
-  # this wifi network has the top priority
-  - interface: wlan*
-    ssids: s0nycL1f3l1ne
-  # then check ethernet
-  - eth*
-  # then check cellular
-  - ppp*
-  # then check for any wifi
-  - wlan*
-
-# define wifi networks as you would see them in a wpa_supplicant file
-# the only difference is we use password instead of psk because what even,,
-# (but psk works too as an alternative if u insist)
-networks:
-  - ssid: myhouse
-    password: sneakysneaky
-
-  - ssid: work
-    password: blegh
-
-  - ssid: nyu
-    identity: whodis-isme
-    password: sneakysneakyyy
-
-    key_mgmt: WPA-EAP
-    phase2: auth=MSCHAPV2
-    pairwise: CCMP
-    auth_alg: OPEN
-    proto: RSN
-    eap: PEAP
-
-  # or equivalently
-  - ssid: nyu
-    identity: whodis-isu
-    password: sneaksneak
-    kind: edu  # this defaults to all of those options
+# # the netswitch interface priority config
+# config:
+#   # this wifi network has the top priority
+#   - interface: wlan*
+#     ssids: s0nycL1f3l1ne
+#   # then check ethernet
+#   - eth*
+#   # then check cellular
+#   - ppp*
+#   # then check for any wifi
+#   - wlan*
+#
+# # define wifi networks as you would see them in a wpa_supplicant file
+# # the only difference is we use password instead of psk because what even,,
+# # (but psk works too as an alternative if u insist)
+# networks:
+#   - ssid: myhouse
+#     password: sneakysneaky
+#
+#   - ssid: work
+#     password: blegh
+#
+#   - ssid: nyu
+#     identity: whodis-isme
+#     password: sneakysneakyyy
+#
+#     key_mgmt: WPA-EAP
+#     phase2: auth=MSCHAPV2
+#     pairwise: CCMP
+#     auth_alg: OPEN
+#     proto: RSN
+#     eap: PEAP
+#
+#   # or equivalently
+#   - ssid: nyu
+#     identity: whodis-isu
+#     password: sneaksneak
+#     kind: edu  # this defaults to all of those options

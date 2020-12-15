@@ -1,4 +1,5 @@
 import sys
+import re
 import fnmatch
 import subprocess
 import logging
@@ -52,18 +53,20 @@ def abbr_config(value, key):
 
 # internet
 
-def internet_connected(iface=None, n=3):
+_packet_loss = re.compile(r'([\d.]+)% packet loss')
+def internet_connected(iface=None, n=3, reliability=0.5):
     '''Check if we're connected to the internet (optionally, check a specific interface `iface`)'''
-    try:
-        result = subprocess.run(
-            "ping {} -c {} 8.8.8.8".format(
-                '-I {}'.format(iface) if iface else '', n),
-            capture_output=True, check=True, shell=True)
-        #logger.info('connected? {} - {}, {}'.format(not result.stderr, result.stdout, result.stderr))
-        return not result.stderr
-    except subprocess.CalledProcessError as e:
-        #logger.debug(e.stderr.decode('utf-8'))
-        pass
+    cmd = "ping {} -c {} 8.8.8.8".format('-I {}'.format(iface) if iface else '', n)
+    #logger.info(cmd)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    matches = _packet_loss.search(result.stdout.decode('utf-8'))
+    #logger.info('stdout: {}'.format(result.stdout.decode('utf-8')))
+    if matches:
+        loss = float(matches.groups()[0])/100
+        if 0 < loss < 1 and loss > reliability:
+            logger.warning('packet loss high: {:.1%}'.format(loss))
+        return loss < reliability
+    return False
 
 
 # ifup / ifdown

@@ -11,6 +11,31 @@ Works on Linux (relies on wpa_supplicant)
 pip install netswitch
 ```
 
+### Docker
+Or you can use Docker instead:
+```bash
+# copy your wpa supplicant configs
+cp -r ./aps /etc/wpa_supplicant/aps
+
+docker run -d --privileged --network="host" \
+    -v /etc/wpa_supplicant:/etc/wpa_supplicant \
+    -e LIFELINE_SSID=mylifeline-2G \
+    --name netswitch beasteers/netswitch
+```
+where `./aps` is filled with a single wpa_supplicant network configuration and where the filename matches the SSID that's inside the file:
+```
+# all of the networks you want to be able to connect to
+./aps/
+    networkA.conf
+    myspectrum-2G.conf
+    myspectrum-5G.conf
+    ...
+```
+
+You can also use `-v ./aps:/etc/wpa_supplicant/aps` instead of copying if you want the aps to be editable from their current location.
+
+**IMPORTANT**: if you don't give it any aps to manage, it won't do anything.
+
 ## Usage
 
 ### Network Switching
@@ -71,6 +96,9 @@ You can also call `netswitch.sync_aps('path/to/aps')` which will sync that direc
 ### CLI
 
 ```bash
+# run the wifi switcher with a lifeline ssid to look out for
+python -m netswitch run --lifeline mylifelinenetwork-2G
+
 # get ip addresses for available interfaces
 python -m netswitch ip
 python -m netswitch ip 'wlan*' 'eth*'  # certain interfaces
