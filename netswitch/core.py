@@ -11,8 +11,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logging.basicConfig()  # INFO
-
 
 
 def log_kw(msg):

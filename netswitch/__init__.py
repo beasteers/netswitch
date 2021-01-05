@@ -31,6 +31,9 @@ def get_iface_info(key, *ifaces):
 
 
 def cli():
+    import logging
+    logging.basicConfig()
+
     import fire
     fire.Fire({
         'ip': get_ip,
