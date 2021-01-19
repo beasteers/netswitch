@@ -17,10 +17,12 @@ class Cell(serial.Serial):
                  timeout=DEFAULT_TIMEOUT, **kw):
         super(Cell, self).__init__(device, baudrate, timeout=timeout, **kw)
 
-    def send(self, cmd, raw=False, end='\r', length=64):
+    def msgsend(self, cmd, length=64, end='\r'):
         self.write((cmd + end).encode())
-        msg = self.read(length).decode("utf-8")
-        lines = msg.splitlines()
+        return self.read(length).decode("utf-8")
+
+    def send(self, cmd, length=64, end='\r', raw=False):
+        lines = self.msgsend(cmd, length, end=end).splitlines()
         if lines and OK in lines:
             if not raw:
                 msg = '\n'.join(
@@ -60,10 +62,10 @@ def devices(device_pattern=DEFAULT_DEVICE_PATTERN):
     return glob.glob(device_pattern)
 
 @contextmanager
-def cell_device(device_pattern=DEFAULT_DEVICE_PATTERN, *a, **kw):
+def cell_device(device_pattern=DEFAULT_DEVICE_PATTERN, retry=3, *a, **kw):
     for dev in glob.glob(device_pattern):
         with Cell(dev, *a, **kw) as cell:
-            if cell.send('ATZ'):
+            if any(cell.send('ATZ') for _ in range(retry or 1)):
                 yield cell
                 return
     raise OSError('No device found matching {}.'.format(device_pattern))
