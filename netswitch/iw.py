@@ -2,8 +2,9 @@ import os
 import glob
 import math
 import time
+import shutil
 from collections import Counter
-from access_points import get_scanner
+import access_points
 import logging
 from . import util, wpasup
 
@@ -15,8 +16,11 @@ logger.setLevel(logging.INFO)
 class WLan:
     def __init__(self, iface='wlan0'):
         self.iface = iface
-        self.wifi_scanner = get_scanner(iface)
+        self.wifi_scanner = access_points.get_scanner(iface)
+        if self.wifi_scanner.cmd.startswith('sudo ') and not shutil.which('sudo'):
+            self.wifi_scanner.cmd = self.wifi_scanner.cmd[5:]
         self._failed_ssids = {}
+
 
     def scan(self, trusted=None):
         aps = self.wifi_scanner.get_access_points()
@@ -28,10 +32,10 @@ class WLan:
         '''Check if an ap is available.'''
         return any(1 for ap_i in self.scan() if ap in ap_i.ssid)
 
-    def select_best_ssid(self, ssids=None, top=0.5, return_all=False, nscans=5, **kw): #, n_single=4
-        if ssids and len(ssids) < 3:
-            logger.info('[{}] Checking for networks: {}'.format(self.iface, ', '.join(ssids)))
-        #    return any(self.ap_available(ssids[0]) for _ in range(n_single)) and ssids[0]
+    def select_best_ssid(self, ssids=None, top=0.6, return_all=False, nscans=5, **kw): #, n_single=4
+        #if ssids and len(ssids) < 3:
+        logger.info('[{}] Checking for networks: {}'.format(
+            self.iface, (', '.join(ssids) if len(ssids) < 5 else '[{} trusted]'.format(len(ssids))) if ssids else '- any -'))
         # select best
         nmin = math.ceil(nscans*top)
         top_seen, all_seen = self._get_top_ssids(ssids, nscans=nscans, **kw)
@@ -46,7 +50,8 @@ class WLan:
         all_seen, top_seen = set(), []
         t0 = time.time()
         #logger.debug('Selecting best network from: {}'.format(ssids or 'all'))
-        while len(top_seen) < nscans:
+        #while len(top_seen) < nscans:
+        for i in range(nscans):
             # get ssid names
             sids = [ap.ssid for ap in self.scan()]
             # filter only the trusted ones

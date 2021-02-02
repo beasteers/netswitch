@@ -103,10 +103,7 @@ class NetSwitch:
             for iface in sorted(ifaces, reverse=True):
                 if restart_missing and not interfaces[iface].get('inet'):
                     util.ifup(iface)
-                #c1,c2=self.connect(iface, **cfg), (not cfg.get('require_internet', True) or internet_connected(iface))
-                #logger.info(str((c1,c2)))
                 if self.connect(iface, **cfg) and (not cfg.get('require_internet', True) or internet_connected(iface)):
-                    #logger.info('allset!')
                     return True
         # check if internet is connected anyways
         return internet_connected()
