@@ -37,7 +37,7 @@ def flatten(*items):
 
 def mask_dict_values(dct, *keys, ch='*', drop=None):
     return {
-        k: '*'*len(v) if k in keys else v
+        k: ch*len(v) if v and k in keys else v
         for k, v in dct.items()
         if not drop or k not in drop
     }
